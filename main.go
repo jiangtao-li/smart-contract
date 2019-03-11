@@ -31,7 +31,7 @@ func init() {
 	log.SetFlags(log.Lshortfile)
 
 	log.Printf("========================================")
-	listenPort = flag.Int("port", 8080, "mux server listen port")
+	listenPort = flag.Int("port", 9000, "mux server listen port")
 	//logDir = flag.String("pdts", "pdts", "pathname of log data directory")
 
 	flag.Parse()
