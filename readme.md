@@ -12,8 +12,8 @@ http://localhost:port/poacknowledgement  //post signature
 
 Transaction Structure
 #### For newProduct and newGenerateBatchNo methods, input format should be
-```
 
+```
   {
         "ProductCode": ""
         "ProductName": ""  
@@ -21,7 +21,7 @@ Transaction Structure
             "ProductBatchNo": "",
             "RawMaterialQuantity": 0
         }]
-    }
+  }
 ```
 
 
@@ -54,6 +54,9 @@ Transaction Structure
             "DocumentHash": "",
             "DocumentSign": ""
         }]
-    }
+  }
 ```
 
+### Build Notes 
+
+Refer to (build readme)[docker-build.md] for details

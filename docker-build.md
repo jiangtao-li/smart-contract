@@ -71,7 +71,7 @@
 	and then it will output the IP of your docker machine, e.g: 192.168.99.100
 	next you can access the django using that IP:
 
-		http://192.168.99.100:8000/
+		http://192.168.99.100:9000/
 		
 
 
