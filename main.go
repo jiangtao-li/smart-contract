@@ -50,7 +50,7 @@ func launchMUXServer() error { // launch MUX server
 	mux := makeMUXRouter()
 	log.Println("HTTP Server Listening on port:", *listenPort) // listenPort is a global flag
 	s := &http.Server{
-		Addr:           ":" + strconv.Itoa(*listenPort),
+		Addr:           "0.0.0.0:" + strconv.Itoa(*listenPort),
 		Handler:        mux,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
