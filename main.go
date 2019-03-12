@@ -15,7 +15,6 @@ import (
 )
 
 ///// GLOBAL FLAGS & VARIABLES
-//var bcurl string
 
 var StartTime time.Time
 
@@ -26,12 +25,13 @@ var listenPort *int // listen port & total locations in the supply chain
 func init() {
 
 	gob.Register(Product{})
+	gob.Register(Block{})
 	gob.Register(map[string]interface{}{})
 
 	log.SetFlags(log.Lshortfile)
 
 	log.Printf("========================================")
-	listenPort = flag.Int("port", 8080, "mux server listen port")
+	listenPort = flag.Int("port", 9000, "mux server listen port")
 	//logDir = flag.String("pdts", "pdts", "pathname of log data directory")
 
 	flag.Parse()
@@ -42,7 +42,6 @@ func init() {
 }
 
 func main() {
-	//bcurl = "172.21.177.60:5000"
 	log.Fatal(launchMUXServer())
 }
 
@@ -50,7 +49,7 @@ func launchMUXServer() error { // launch MUX server
 	mux := makeMUXRouter()
 	log.Println("HTTP Server Listening on port:", *listenPort) // listenPort is a global flag
 	s := &http.Server{
-		Addr:           "0.0.0.0:" + strconv.Itoa(*listenPort),
+		Addr:           ":" + strconv.Itoa(*listenPort),
 		Handler:        mux,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
@@ -132,8 +131,8 @@ func handleCheckProductBatchNo(w http.ResponseWriter, r *http.Request) {
 func handleNewProduct(w http.ResponseWriter, r *http.Request) { //handle new product request
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("handleNewProduct() API called")
-	var receivedNewProduct NewProductTransaction
-	var newProduct NewProductTransaction
+	var receivedNewProduct Product
+	var newProduct Product
 
 	decoder := json.NewDecoder(r.Body)
 
@@ -143,7 +142,7 @@ func handleNewProduct(w http.ResponseWriter, r *http.Request) { //handle new pro
 	}
 	defer r.Body.Close()
 
-	if receivedNewProduct.ProductID == "" {
+	if receivedNewProduct.ProductCode == "" {
 		respmsg := "Emptry ProductCode!"
 		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
 		io.WriteString(w, string(bytes))
@@ -153,11 +152,11 @@ func handleNewProduct(w http.ResponseWriter, r *http.Request) { //handle new pro
 	//newProduct.TxnTimestamp = time.Now().Format("02-01-2006 15:04:05 Mon")
 	log.Println("New product information received:", receivedNewProduct)
 
-	result, _ := CheckProductCode(receivedNewProduct.ProductID) // check if the SerialNo exists
+	result, _ := CheckProductCode(receivedNewProduct.ProductCode) // check if the SerialNo exists
 	var respmsg string
 
 	if result == true {
-		newProduct.ProductID = receivedNewProduct.ProductID
+		newProduct.ProductCode = receivedNewProduct.ProductCode
 		GenerateNewProductTx(newProduct)
 		//log.Println(result)
 		respmsg = "Transaction has been posted, please wait for comfirmation"
@@ -175,8 +174,8 @@ func handleNewProduct(w http.ResponseWriter, r *http.Request) { //handle new pro
 func handleGenerateBatchNo(w http.ResponseWriter, r *http.Request) { //handle new product request
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("handleGenerateBatchNo() API called")
-	var receivedNewTx WarehousingTransaction
-	var newTx WarehousingTransaction
+	var receivedNewTx Product
+	var newTx Product
 
 	decoder := json.NewDecoder(r.Body)
 
@@ -186,24 +185,25 @@ func handleGenerateBatchNo(w http.ResponseWriter, r *http.Request) { //handle ne
 	}
 	defer r.Body.Close()
 
-	if receivedNewTx.ProductBatch == "" {
+	if receivedNewTx.ProductBatch.ProductBatchNo == "" {
 		respmsg := "Emptry BatchNo !"
 		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
 		io.WriteString(w, string(bytes))
 		return
-
 	}
 
 	log.Println("New product information received:", receivedNewTx)
 
-	result, _ := CheckProductBatchNo(receivedNewTx.ProductID, receivedNewTx.ProductBatch) // check if the SerialNo exists
+	result, _ := CheckProductBatchNo(receivedNewTx.ProductCode, receivedNewTx.ProductBatch.ProductBatchNo) // check if the SerialNo exists
 	var respmsg string
 
 	if result == true {
-		newTx = receivedNewTx
+		newTx.ProductCode = receivedNewTx.ProductCode
+
+		newTx.ProductBatch = receivedNewTx.ProductBatch
 
 		//newTx.ProductBatch[0].ProductBatchQuantity = receivedNewTx.ProductBatch[0].ProductBatchQuantity
-		GenerateWarehousingTransaction(newTx)
+		GenerateNewProductTx(newTx)
 		//log.Println(result)
 		respmsg = "Transaction has been posted, please wait for comfirmation"
 		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
@@ -249,7 +249,7 @@ func handleCheckPoacknowledgement(w http.ResponseWriter, r *http.Request) {
 	//receivedDocumentURL := params["DocumentURL"]
 	receivedDocumentHash := params["DocumentHash"]
 
-	url := bcurl + "/query/del/Document.DocumentHash/" + receivedDocumentHash
+	url := bcurl+"/query/del/Document.DocumentHash/" + receivedDocumentHash
 	log.Println(url)
 	resp, err := http.NewRequest("GET", url, nil)
 	if err != nil {

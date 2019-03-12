@@ -15,12 +15,12 @@ Transaction Structure
 
 ```
   {
-        "ProductCode": ""
-        "ProductName": ""  
-        "ProductBatch": [{
+        "ProductCode": "",
+        "ProductName": "",  
+        "ProductBatch": {
             "ProductBatchNo": "",
             "RawMaterialQuantity": 0
-        }]
+        }
   }
 ```
 
@@ -40,20 +40,20 @@ Transaction Structure
         "LocationID": "",
         "DeliveryStatus": "",
         "DeliveryType": "",
-        "Product": [{
+        "Product": {
             "ProductCode": "",
             "ProductName": "",
             "ProductBatch": {
                 "ProductBatchNo": "",
                 "ProductBatchQuantity": 0
             }
-        }],
-        "Document": [{
+        },
+        "Document": {
             "DocumentURL": "",
             "DocumentType": "",
             "DocumentHash": "",
             "DocumentSign": ""
-        }]
+        }
   }
 ```
 
