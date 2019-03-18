@@ -66,14 +66,9 @@ func makeMUXRouter() http.Handler { // create handlers
 	muxRouter := mux.NewRouter()
 	muxRouter.HandleFunc("/", handleHome).Methods("GET")
 
-	//muxRouter.HandleFunc("/CheckQuantity/SerialNo/{value}", handleCheckQuantity).Methods("GET") //post a new product
-	//muxRouter.HandleFunc("/CheckProductBatchNo/{ProductCode}/{ProductBatchNo}", handleCheckProductBatchNo).Methods("GET")
 
 	muxRouter.HandleFunc("/ProductDeclaration", handleProductDeclaration).Methods("POST") //post a new product
 	muxRouter.HandleFunc("/ShippingBatchDeclaration", handleShippingBatchDeclaration).Methods("POST")
-	//muxRouter.HandleFunc("/PurchaseOrderRegistry", handlePurchaseOrderRegistry).Methods("POST")
-	//muxRouter.HandleFunc("/checkpoacknowledgement/{DocumentURL}/{DocumentHash}", handleCheckPoacknowledgement).Methods("GET")
-	//muxRouter.HandleFunc("/poacknowledgement", handlePoacknowledgement).Methods("PSOT")
 
 	return muxRouter
 }
@@ -179,79 +174,6 @@ func handleShippingBatchDeclaration(w http.ResponseWriter, r *http.Request) { //
 
 }
 
-// func handlePurchaseOrderRegistry(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	log.Println("handlePurchaseOrderRegistry() API called")
-// 	var receivedNewTx DeliveryTransaction
-// 	var respmsg string
 
-// 	decoder := json.NewDecoder(r.Body)
-// 	if err := decoder.Decode(&receivedNewTx); err != nil {
-// 		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
-// 		return
-// 	}
 
-// 	result, _ := CheckProductQuantity(receivedNewTx.Product.ProductCode, receivedNewTx.Product.ProductBatch.ProductBatchNo, receivedNewTx.Product.ProductBatch.ProductBatchQuantity)
-// 	if result == true {
-// 		GenerateNewTxbyDelivery(receivedNewTx)
-// 		respmsg = "Transaction has been posted, please wait for comfirmation"
-// 		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
-// 		io.WriteString(w, string(bytes))
-// 	} else {
-// 		//log.Println(result)
-// 		respmsg = "Error Information!"
-// 		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
-// 		io.WriteString(w, string(bytes))
-// 	}
-// }
 
-func handleCheckPoacknowledgement(w http.ResponseWriter, r *http.Request) {
-	log.Println("handleCheckPoacknowledgement() API called")
-	params := mux.Vars(r)
-	//receivedDocumentURL := params["DocumentURL"]
-	receivedDocumentHash := params["DocumentHash"]
-
-	url := bcurl + "/query/del/Document.DocumentHash/" + receivedDocumentHash
-	log.Println(url)
-	resp, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	res, _ := http.DefaultClient.Do(resp)
-	defer res.Body.Close()
-	//log.Println(resp)
-
-	var body interface{}
-	err1 := json.NewDecoder(res.Body).Decode(&body)
-	if err1 != nil {
-		log.Println(err1)
-	}
-	//log.Println(body)
-	bytes, err := json.MarshalIndent(body, "", "  ")
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	io.WriteString(w, string(bytes))
-	//log.Println(result)
-}
-
-func handlePoacknowledgement(w http.ResponseWriter, r *http.Request) {
-	log.Println("handlePoacknowledgement() API called")
-	w.Header().Set("Content-Type", "application/json")
-	var receivedNewTx DeliveryTransaction
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&receivedNewTx); err != nil {
-		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
-		return
-	}
-
-	GenerateNewDeliveryTx(receivedNewTx)
-
-	respmsg := "Succeed!"
-	bytes, _ := json.MarshalIndent(respmsg, "", "  ")
-	io.WriteString(w, string(bytes))
-}

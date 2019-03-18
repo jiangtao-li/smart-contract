@@ -1,48 +1,40 @@
-Methods available are: http://localhost:port/
+Methods available are: http://ip:port/ 
+url can be changed in func.go
 
-http://localhost:port/newProduct      //generate new ProdectCode
-
-http://localhost:port/newGenerateBatchNo  //generate new ProductBatchNo and ProductBatchQuantity with existing ProdectCode
-
-http://localhost:port/PurchaseOrderRegistry //Post DocumentURL and DocumentHash
-
-http://localhost:port/checkpoacknowledgement/{DocumentURL}/{DocumentHash}  
-http://localhost:port/poacknowledgement  //post signature
+For example, Methods available are: http://localhost:9000/
+http://localhost:port/ProductDeclaration //Product declaration
+     
+http://localhost:port/ShippingBatchDeclaration   // for Shipping Batch declaration
 
 
 Transaction Structure
-#### For newProduct (Transaction type 3), input format should be
+#### First smart contract: Product declaration
+Let users key in the product details and raw materials:
+The smart contract to check for duplicates of product Batch number. Product batch number has to be unique. Raise error when Product Batch ID has been used. The export will call this API when he have manufactured a new batch of products.
+Readable by Importer. 
+
 
 ```
    {
-    "SerialNo":        0,
-    "ProductID":       "",
-    "ProductName":     "",
-    "RawMaterialsID":  "",
-    "RawMaterialName": ""
-}
-
-```
-
-#### For newGenerateBatchNo (Transaction type 4)
-
-```
-{
-    "SerialNo":        0,
-    "ProductID":       "",
-    "ProductName":     "",
-    "ProductBatch":    "",
-    "RawMaterialsID":  "",
-    "RawMaterialName": "",
-    "MaterialBatch":   "",
-    "Quantity":        1
-}
+        "SerialNo": 0,
+        "ProductCode": "",
+        "ProductName": "",
+        "ProductBatchNo": "",
+        "Quantity": 0,
+        "RawMaterial": {
+            "RawMaterialBatchNo": "",
+            "RawMaterialsID": "",
+            "RawMaterialName": "",
+            "RawMaterialQuantity": 0,
+            "RawMaterialMeasurementUnit": ""
+        }
+    }
 
 
 ```
 
+#### Second smart contract: Shipping Batch declaration
 
-#### For PurchaseOrderRegistry and poacknowledgement methods
 ```
   {
         "SerialNo": 0,
@@ -63,15 +55,21 @@ Transaction Structure
                 "ProductBatchNo": "",
                 "ProductBatchQuantity": 0
             }
-        }],
-        "Document": [{
+        },
+        "Document": {
             "DocumentURL": "",
             "DocumentType": "",
             "DocumentHash": "",
             "DocumentSign": ""
-        }]
-  }
+        }
+    }
+
+
+
 ```
+
+
+
 
 ### Build Notes 
 
