@@ -11,19 +11,35 @@ http://localhost:port/poacknowledgement  //post signature
 
 
 Transaction Structure
-#### For newProduct and newGenerateBatchNo methods, input format should be
+#### For newProduct (Transaction type 3), input format should be
 
 ```
-  {
-        "ProductCode": "",
-        "ProductName": "",  
-        "ProductBatch": {
-            "ProductBatchNo": "",
-            "RawMaterialQuantity": 0
-        }
-  }
+   {
+    "SerialNo":        0,
+    "ProductID":       "",
+    "ProductName":     "",
+    "RawMaterialsID":  "",
+    "RawMaterialName": ""
+}
+
 ```
 
+#### For newGenerateBatchNo (Transaction type 4)
+
+```
+{
+    "SerialNo":        0,
+    "ProductID":       "",
+    "ProductName":     "",
+    "ProductBatch":    "",
+    "RawMaterialsID":  "",
+    "RawMaterialName": "",
+    "MaterialBatch":   "",
+    "Quantity":        1
+}
+
+
+```
 
 
 #### For PurchaseOrderRegistry and poacknowledgement methods
@@ -47,13 +63,13 @@ Transaction Structure
                 "ProductBatchNo": "",
                 "ProductBatchQuantity": 0
             }
-        },
-        "Document": {
+        }],
+        "Document": [{
             "DocumentURL": "",
             "DocumentType": "",
             "DocumentHash": "",
             "DocumentSign": ""
-        }
+        }]
   }
 ```
 

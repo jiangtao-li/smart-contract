@@ -13,6 +13,8 @@ import (
 ///// GLOBAL FLAGS & VARIABLES
 var bcurl = "http://172.21.177.60:6500"
 
+//var bcurl = "http://localhost:6500"
+
 type RawMaterialTransaction struct {
 	SerialNo       int    `json:"SerialNo"`
 	ProductCode    string `json:"ProductCode"`
@@ -20,7 +22,7 @@ type RawMaterialTransaction struct {
 	ProductBatchNo string `json:"ProductBatchNo"`
 	Quantity       int    `json:"Quantity"`
 	//TxnTimestamp string `json:"TxnTimestamp"`
-	RawMaterialInfo RawMaterial
+	RawMaterial []RawMaterial
 }
 
 type RawMaterial struct { //the raw material document
@@ -36,19 +38,20 @@ var ProductData []Product // `Product` array, to be saved as gob file
 /////
 
 type DeliveryTransaction struct {
-	SerialNo          int    `json:"SerialNo"`
-	RecGenerator      string `json:"RecGenerator"`
-	ShipmentID        string `json:"ShipmentID"`
-	Timestamp         string `json:"TxnTimestamp"`
-	Longitude         string `json:"Longitude"`
-	Latitude          string `json:"Latitude"`
+	SerialNo     int    `json:"SerialNo"`
+	RecGenerator string `json:"RecGenerator"`
+	ShipmentID   string `json:"ShipmentID"`
+	Timestamp    string `json:"TxnTimestamp"`
+	//Longitude         string `json:"Longitude"`
+	//Latitude          string `json:"Latitude"`
 	ShippedFromCompID string `json:"ShippedFromCompID"`
 	ShippedToCompID   string `json:"ShippedToCompID"`
-	LocationID        string `json:"LocationID"`
-	DeliveryStatus    string `json:"DeliveryStatus"`
-	DeliveryType      string `json:"DeliveryType"`
-	Product           Product
-	Document          Document
+	//LocationID        string `json:"LocationID"`
+	//DeliveryStatus    string `json:"DeliveryStatus"`
+	DeliveryType string `json:"DeliveryType"`
+	Product      []Product
+	Document     Document
+	UserSign     Signature
 }
 
 type Product struct {
@@ -67,15 +70,10 @@ type Document struct {
 	DocumentSign string
 }
 
-type Block struct { // An element of Blockchain
-	Index      int
-	Timestamp  string
-	TxnType    int
-	TxnPayload string
-	Comment    string
-	Proposer   string
-	PrevHash   string
-	ThisHash   string
+type Signature struct {
+	User     string
+	Verify   bool
+	USerSign string
 }
 
 func CheckSerialNo(SerialNo int) bool { // check the SerialNo with blockchain nodes
@@ -108,11 +106,11 @@ func CheckSerialNo(SerialNo int) bool { // check the SerialNo with blockchain no
 	return result
 }
 
-func CheckProductCode(ProductCode string) (bool, []DeliveryTransaction) { // check the ProductCode with blockchain nodes
+func CheckProductBatchNo(ProductBatchNo string) (bool, []RawMaterialTransaction) { // check the ProductBatchNo with blockchain nodes
 	//log.Println("called")
 	result := false
-	receivedProductCode := ProductCode
-	url := bcurl + "/query/del/Product.ProductCode/" + receivedProductCode
+	receivedProductBatchNo := ProductBatchNo
+	url := bcurl + "/query/raw/ProductBatchNo/" + receivedProductBatchNo
 	log.Println(url)
 
 	resp, err := http.NewRequest("GET", url, nil)
@@ -124,7 +122,7 @@ func CheckProductCode(ProductCode string) (bool, []DeliveryTransaction) { // che
 	defer res.Body.Close()
 	//log.Println(resp)
 
-	var body []DeliveryTransaction
+	var body []RawMaterialTransaction
 	err1 := json.NewDecoder(res.Body).Decode(&body)
 	if err1 != nil {
 		log.Println(err1)
@@ -132,32 +130,34 @@ func CheckProductCode(ProductCode string) (bool, []DeliveryTransaction) { // che
 
 	if body == nil { //if the response is null then return ture. It means the ProductCode can be used.
 		result = true
+	} else {
+		result = false
 	}
 	//log.Println(result)
 
 	return result, body
 }
 
-func CheckProductBatchNo(ProductCode string, ProductBatchNo string) (bool, []DeliveryTransaction) { // check the ProductBatchNo with blockchain nodes
-	result := true
-	receivedProductCode := ProductCode
+func CheckProductBatchNonCode(ProductCode string, ProductBatchNo string) (bool, []RawMaterialTransaction) { // check the ProductBatchNo with blockchain nodes
+	result := false //check if information is correct
+
 	receivedProductBatchNo := ProductBatchNo
+	var querybyProductCodeAndBatchNo []RawMaterialTransaction
 
 	//var querybyProductCode []DeliveryTransaction
-	status, querybyProductCode := CheckProductCode(receivedProductCode)
+	status, querybyProductBatchNo := CheckProductBatchNo(receivedProductBatchNo)
 	if status == true {
-		return result, querybyProductCode
+		return result, querybyProductCodeAndBatchNo
 	}
 	//log.Println(querybyProductCode)
 
-	querybyProductCodeLen := len(querybyProductCode)
-	var querybyProductCodeAndBatchNo []DeliveryTransaction
+	querybyquerybyProductBatchNoLen := len(querybyProductBatchNo)
 
-	for i := 0; i < querybyProductCodeLen; i++ {
+	for i := 0; i < querybyquerybyProductBatchNoLen; i++ {
 
-		if querybyProductCode[i].Product.ProductBatch.ProductBatchNo == receivedProductBatchNo {
-			result = false
-			querybyProductCodeAndBatchNo = append(querybyProductCodeAndBatchNo, querybyProductCode[i])
+		if querybyProductBatchNo[i].ProductBatchNo == receivedProductBatchNo {
+			result = true
+			querybyProductCodeAndBatchNo = append(querybyProductCodeAndBatchNo, querybyProductBatchNo[i])
 		}
 
 	}
@@ -165,37 +165,29 @@ func CheckProductBatchNo(ProductCode string, ProductBatchNo string) (bool, []Del
 	return result, querybyProductCodeAndBatchNo
 }
 
-func CheckQuantity(ProductCode string, ProductBatchNo string, ProductBatchQuantity int) (bool, DeliveryTransaction) { // check the ProductCode with blockchain nodes
-	var DeliveryNewTransaction DeliveryTransaction
+func CheckProductQuantity(receivedTx []RawMaterialTransaction, ProductBatchQuantity int) bool { // check the ProductCode with blockchain nodes
+	var querybyProductCodeAndBatchNo []RawMaterialTransaction
 	result := false
-	receivedProductCode := ProductCode
-	receivedProductBatchNo := ProductBatchNo
 	receivedProductBatchQuantity := ProductBatchQuantity
+	querybyProductCodeAndBatchNo = receivedTx
 
-	status, querybyProductCodeAndBatchNo := CheckProductBatchNo(receivedProductCode, receivedProductBatchNo)
-	if status == true {
-		return result, DeliveryNewTransaction
-	}
+	Txlength := len(receivedTx)
 
-	Txlength := len(querybyProductCodeAndBatchNo)
-
-	if receivedProductBatchQuantity == querybyProductCodeAndBatchNo[Txlength-1].Product.ProductBatch.ProductBatchQuantity {
+	if receivedProductBatchQuantity <= querybyProductCodeAndBatchNo[Txlength-1].Quantity {
 		result = true
 	}
 
-	return result, querybyProductCodeAndBatchNo[Txlength-1]
+	return result
 
 }
 
-func GenerateNewProductTx(newProductInfo Product) { //Post this new transaction
-	posturl := bcurl + "/del"
-	//posturl := "http://localhost:8880/raw"
-	log.Println(newProductInfo)
-	var NewDeliveryTx DeliveryTransaction
-	NewDeliveryTx.Product = newProductInfo
+func GenerateNewRawMaterialTx(newTx RawMaterialTransaction) { //Post this new transaction
+	posturl := bcurl + "/raw"
+	//log.Println(newTx)
+	var receivedNewTx RawMaterialTransaction
+	receivedNewTx = newTx
 
-	log.Println("Prepare for posting")
-	formdata, err := json.Marshal(NewDeliveryTx)
+	formdata, err := json.Marshal(receivedNewTx)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -217,13 +209,13 @@ func GenerateNewProductTx(newProductInfo Product) { //Post this new transaction
 	}
 	fmt.Println(string(body_byte))
 
-	log.Println("New product posted!")
+	log.Println("New TRANSACTION posted!")
 }
 
-func GenerateNewTxbyDelivery(newDeliveryInfo DeliveryTransaction) { //Post this new transaction
-	posturl := bcurl + "/del"
+func GenerateNewDeliveryTx(newDeliveryInfo DeliveryTransaction) { //Post this new transaction
+	posturl := bcurl + "/ship"
 	//posturl := "http://localhost:8880/raw"
-	log.Println(newDeliveryInfo)
+	//log.Println(newDeliveryTx)
 	var NewDeliveryTx DeliveryTransaction
 	NewDeliveryTx = newDeliveryInfo
 
