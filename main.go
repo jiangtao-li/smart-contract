@@ -66,9 +66,10 @@ func makeMUXRouter() http.Handler { // create handlers
 	muxRouter := mux.NewRouter()
 	muxRouter.HandleFunc("/", handleHome).Methods("GET")
 
-
 	muxRouter.HandleFunc("/ProductDeclaration", handleProductDeclaration).Methods("POST") //post a new product
 	muxRouter.HandleFunc("/ShippingBatchDeclaration", handleShippingBatchDeclaration).Methods("POST")
+	muxRouter.HandleFunc("/DocumentsUpload", handleDocumentsUpload).Methods("POST")
+	muxRouter.HandleFunc("/OwnershipChange", handleOwnershipChange).Methods("POST")
 
 	return muxRouter
 }
@@ -92,6 +93,13 @@ func handleProductDeclaration(w http.ResponseWriter, r *http.Request) { //handle
 	}
 	defer r.Body.Close()
 
+	if receivedNewTx.ProductCode == "" {
+		respmsg := "Emptry Product Code!"
+		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
+		io.WriteString(w, string(bytes))
+		return
+	}
+
 	if receivedNewTx.ProductBatchNo == "" {
 		respmsg := "Emptry Product Batch Number!"
 		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
@@ -102,7 +110,9 @@ func handleProductDeclaration(w http.ResponseWriter, r *http.Request) { //handle
 	//newProduct.TxnTimestamp = time.Now().Format("02-01-2006 15:04:05 Mon")
 	log.Println("New transaction received:", receivedNewTx)
 
-	result, _ := CheckProductBatchNo(receivedNewTx.ProductBatchNo) // check if the SerialNo exists
+	result, _ := CheckProductCodeBatch(receivedNewTx.ProductCode, receivedNewTx.ProductBatchNo)
+
+	//result, _ := CheckProductBatchNo(receivedNewTx.ProductBatchNo) // check if the SerialNo exists
 	var respmsg string
 
 	if result == true {
@@ -174,6 +184,92 @@ func handleShippingBatchDeclaration(w http.ResponseWriter, r *http.Request) { //
 
 }
 
+func handleDocumentsUpload(w http.ResponseWriter, r *http.Request) { //handle new product request
+	log.Println("called")
+	w.Header().Set("Content-Type", "application/json")
+	log.Println("handleDocumentsUpload() API called")
+	var receivedNewTx ShippingDocTransaction
 
+	decoder := json.NewDecoder(r.Body)
 
+	if err := decoder.Decode(&receivedNewTx); err != nil {
+		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
+		return
+	}
+	defer r.Body.Close()
 
+	if receivedNewTx.Document.DocumentURL == "" {
+		respmsg := "Empty Document!"
+		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
+		io.WriteString(w, string(bytes))
+		return
+	}
+
+	if receivedNewTx.Document.DocumentType == "" {
+		respmsg := "Empty Document Type!"
+		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
+		io.WriteString(w, string(bytes))
+		return
+	}
+
+	//newProduct.TxnTimestamp = time.Now().Format("02-01-2006 15:04:05 Mon")
+	log.Println("New transaction received:", receivedNewTx)
+	var respmsg string
+
+	GenerateNewShippingDocTransaction(receivedNewTx)
+	respmsg = "Transaction has been posted, please wait for comfirmation"
+	bytes, _ := json.MarshalIndent(respmsg, "", "  ")
+	io.WriteString(w, string(bytes))
+
+}
+
+func handleOwnershipChange(w http.ResponseWriter, r *http.Request) { //handle new product request
+	log.Println("called")
+	w.Header().Set("Content-Type", "application/json")
+	log.Println("handleNewProduct() API called")
+	var receivedNewTx OwnerTransaction
+
+	decoder := json.NewDecoder(r.Body)
+
+	if err := decoder.Decode(&receivedNewTx); err != nil {
+		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
+		return
+	}
+	defer r.Body.Close()
+
+	if receivedNewTx.UserSign.Verify == false {
+		respmsg := "Invalid Signature!"
+		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
+		io.WriteString(w, string(bytes))
+		return
+	}
+
+	if receivedNewTx.UserSign.User == "" {
+		respmsg := "Empty freight forwarder name!"
+		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
+		io.WriteString(w, string(bytes))
+		return
+	}
+
+	//newProduct.TxnTimestamp = time.Now().Format("02-01-2006 15:04:05 Mon")
+	log.Println("New transaction received:", receivedNewTx)
+
+	result, _ := CheckShipmentID(receivedNewTx.ShipmentID)
+
+	//result, _ := CheckProductBatchNo(receivedNewTx.ProductBatchNo) // check if the SerialNo exists
+	var respmsg string
+
+	if result == true {
+		GenerateNewOwenerTransaction(receivedNewTx)
+		//log.Println(result)
+		respmsg = "Transaction has been posted, please wait for comfirmation"
+		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
+		io.WriteString(w, string(bytes))
+	} else {
+		//log.Println(result)
+		respmsg = "ProductBatch existed!"
+		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
+		io.WriteString(w, string(bytes))
+	}
+
+}
