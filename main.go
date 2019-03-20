@@ -11,12 +11,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 )
 
 ///// GLOBAL FLAGS & VARIABLES
 
 var StartTime time.Time
+
+var fakeinventry []Productlist
 
 var listenPort *int // listen port & total locations in the supply chain
 
@@ -70,8 +73,20 @@ func makeMUXRouter() http.Handler { // create handlers
 	muxRouter.HandleFunc("/ShippingBatchDeclaration", handleShippingBatchDeclaration).Methods("POST")
 	muxRouter.HandleFunc("/DocumentsUpload", handleDocumentsUpload).Methods("POST")
 	muxRouter.HandleFunc("/OwnershipChange", handleOwnershipChange).Methods("POST")
+	muxRouter.HandleFunc("/Inventoryquery", Inventoryquery).Methods("GET")
 
 	return muxRouter
+}
+
+func Inventoryquery(w http.ResponseWriter, r *http.Request) {
+	log.Println("Inventoryquery() API called")
+	bytes, err := json.MarshalIndent(fakeinventry, "", "  ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	spew.Dump(fakeinventry)
+	io.WriteString(w, string(bytes))
 }
 
 func handleHome(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +132,14 @@ func handleProductDeclaration(w http.ResponseWriter, r *http.Request) { //handle
 
 	if result == true {
 		GenerateNewRawMaterialTx(receivedNewTx)
-		//log.Println(result)
+		newinventory := Productlist{
+			ProductCode:    receivedNewTx.ProductCode,
+			ProductName:    receivedNewTx.ProductName,
+			ProductBatchNo: receivedNewTx.ProductBatchNo,
+			Quantity:       receivedNewTx.Quantity,
+		}
+		fakeinventry = append(fakeinventry, newinventory)
+		log.Println(fakeinventry)
 		respmsg = "Transaction has been posted, please wait for comfirmation"
 		bytes, _ := json.MarshalIndent(respmsg, "", "  ")
 		io.WriteString(w, string(bytes))
@@ -158,13 +180,14 @@ func handleShippingBatchDeclaration(w http.ResponseWriter, r *http.Request) { //
 	log.Println("New product information received:", receivedNewTx)
 
 	for j := 0; j < productLen; j++ {
-		result, queryresult := CheckProductBatchNonCode(receivedNewTx.Product[j].ProductCode, receivedNewTx.Product[j].ProductBatch.ProductBatchNo) // check if the SerialNo exists
+		result, _ := CheckProductBatchNonCode(receivedNewTx.Product[j].ProductCode, receivedNewTx.Product[j].ProductBatch.ProductBatchNo) // check if the SerialNo exists
 		if result == false {
 			respmsg = "The product batch number or product code you provided is incorrect!"
 			bytes, _ := json.MarshalIndent(respmsg, "", "  ")
 			io.WriteString(w, string(bytes))
 		} else {
-			result2 := CheckProductQuantity(queryresult, receivedNewTx.Product[j].ProductBatch.ProductBatchQuantity)
+			result2, k := checkfakeinventory(fakeinventry, receivedNewTx.Product[j].ProductCode, receivedNewTx.Product[j].ProductBatch.ProductBatchNo, receivedNewTx.Product[j].ProductBatch.ProductBatchQuantity)
+			//			result2 := CheckProductQuantity(queryresult, receivedNewTx.Product[j].ProductBatch.ProductBatchQuantity)
 			if result2 == false {
 				respmsg = "The product batch quantity you provided is incorrect!"
 				bytes, _ := json.MarshalIndent(respmsg, "", "  ")
@@ -173,6 +196,7 @@ func handleShippingBatchDeclaration(w http.ResponseWriter, r *http.Request) { //
 				if receivedNewTx.UserSign.Verify == true {
 					//newTx.ProductBatch[0].ProductBatchQuantity = receivedNewTx.ProductBatch[0].ProductBatchQuantity
 					GenerateNewDeliveryTx(receivedNewTx)
+					fakeinventry[k].Quantity -= receivedNewTx.Product[j].ProductBatch.ProductBatchQuantity
 					//log.Println(result)
 					respmsg = "Transaction has been posted, please wait for comfirmation"
 					bytes, _ := json.MarshalIndent(respmsg, "", "  ")
@@ -181,6 +205,7 @@ func handleShippingBatchDeclaration(w http.ResponseWriter, r *http.Request) { //
 			}
 		}
 	}
+	log.Println(fakeinventry)
 
 }
 

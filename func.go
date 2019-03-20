@@ -107,6 +107,21 @@ type OwnerTransaction struct {
 	UserSign          DocSignature
 }
 
+//InventoryTransaction
+type InventoryTransaction struct { //Create a wallet like structure to store products
+	SerialNo       int    `json:"SerialNo"`
+	UserIdHash     string `json:"UserIdHash"`
+	TxnTimestamp   string `json:"TxnTimestamp"`
+	Productstorage []Productlist
+}
+
+type Productlist struct { //the raw material document
+	ProductCode    string `json:"ProductCode"`
+	ProductName    string `json:"ProductName"`
+	ProductBatchNo string `json:"ProductBatchNo"`
+	Quantity       int    `json:"Quantity"`
+}
+
 func CheckSerialNo(SerialNo int) bool { // check the SerialNo with blockchain nodes
 	result := false
 	receivedSerialNo := strconv.Itoa(SerialNo)
@@ -398,6 +413,18 @@ func GenerateNewDeliveryTx(newDeliveryInfo DeliveryTransaction) { //Post this ne
 	fmt.Println(string(body_byte))
 
 	log.Println("New product posted!")
+}
+func checkfakeinventory(fakeinventry []Productlist, ProductCode string, ProductBatchNo string, Quantity int) (bool, int) {
+
+	for i, v := range fakeinventry {
+		if v.ProductCode == ProductCode && v.ProductBatchNo == ProductBatchNo {
+			if v.Quantity >= Quantity {
+				return true, i
+			}
+
+		}
+	}
+	return false, 0
 }
 
 func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
