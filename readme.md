@@ -12,6 +12,7 @@ Transaction Structure
 Let users key in the product details and raw materials:
 The smart contract to check for duplicates of product Batch number. Product batch number has to be unique. Raise error when Product Batch ID has been used. The export will call this API when he have manufactured a new batch of products.
 Readable by Importer. 
+`ProductDeclaration` with body
 
 
 ```
@@ -34,6 +35,8 @@ Readable by Importer.
 ```
 
 #### Second smart contract: Shipping Batch declaration
+
+`ShippingBatchDeclaration`with body
 
 ```
   {
@@ -68,7 +71,65 @@ Readable by Importer.
 
 ```
 
+#### Fourth Smart: MSDS and DG upload
 
+> Let exporter upload required DG and MSDS. 
+
+`DocumentsUpload` with body
+
+```
+ {
+	"SerialNo":        0,
+	"RecGenerator":      "",
+	"ShipmentID":       "",
+	"Timestamp":     "",
+	"ShippedFromCompID":  "",
+	"ShippedToCompID": "",
+	"DeliveryType":      "",
+     "Document": {
+            "DocumentURL": "",
+            "DocumentType": "",
+            "DocumentHash": "",
+            "DocumentSign": ""
+        },
+     "UserSign":{
+			"User":     "",
+			"Verify":   true,
+			"UserSign": ""
+		}
+
+}
+```
+
+#### Fifth Smart: Ownership change
+
+> Let Transfer goods to the Freight forwarder. Require Freight forwarder to acknowledge and upload bill of laden. The smart contract has to check for the Shipping documents i.e. the transaction for the shipping document must be valid.  
+
+`OwnershipChange` with body
+
+
+```
+{
+	"SerialNo":        0,
+	"RecGenerator":      "",
+	"ShipmentID":        "",
+	"Timestamp":         "",
+	"ShippedFromCompID": "",
+	"ShippedToCompID":   "",
+	"DeliveryType":      "",
+	"UserSign":{
+        "User":     "",
+        "Verify":   true,
+        "UserSign": "",
+        "Document": {
+            "DocumentURL":  "",
+            "DocumentType": "",
+            "DocumentHash": "",
+            "DocumentSign": ""
+        }
+	}
+}
+```
 
 
 ### Build Notes 
