@@ -11,9 +11,9 @@ import (
 )
 
 ///// GLOBAL FLAGS & VARIABLES
-//var bcurl = "http://172.21.177.60:6500"
+var bcurl = "http://172.21.177.60:6500"
 
-var bcurl = "http://localhost:6500"
+//var bcurl = "http://localhost:6500"
 
 type RawMaterialTransaction struct {
 	SerialNo       int    `json:"SerialNo"`
