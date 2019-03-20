@@ -39,6 +39,7 @@ Readable by Importer.
 #### Second smart contract: Shipping Batch declaration
 
 > Let users create shipment based on PO.
+
 > Group different batches of product under a single shipment ID. The contract is called by the export to the importer.
 > The smart contract checks for the quantity inputted by the exporter against current stock of the batches. At the same time, the export uploads the documents details of the PO. The importer will check through and once verified, will sign off with a signature to complete the transaction.
 
