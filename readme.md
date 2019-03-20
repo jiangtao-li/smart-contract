@@ -18,19 +18,22 @@ Readable by Importer.
 
 
 ```
-   {
+  {
         "SerialNo": 0,
         "ProductCode": "",
         "ProductName": "",
         "ProductBatchNo": "",
         "Quantity": 0,
-        "RawMaterial": {
-            "RawMaterialBatchNo": "",
-            "RawMaterialsID": "",
-            "RawMaterialName": "",
-            "RawMaterialQuantity": 0,
-            "RawMaterialMeasurementUnit": ""
-        }
+        "RawMaterial": 
+        [
+            {
+                "RawMaterialBatchNo": "",
+                "RawMaterialsID": "",
+                "RawMaterialName": "",
+                "RawMaterialQuantity": 0,
+                "RawMaterialMeasurementUnit": ""
+            }
+        ]
     }
 
 
@@ -45,7 +48,7 @@ Readable by Importer.
 `ShippingBatchDeclaration` with body
 
 ```
-  {
+   {
         "SerialNo": 0,
         "RecGenerator": "",
         "ShipmentID": "",
@@ -57,20 +60,28 @@ Readable by Importer.
         "LocationID": "",
         "DeliveryStatus": "",
         "DeliveryType": "",
-        "Product": {
-            "ProductCode": "",
-            "ProductName": "",
-            "ProductBatch": {
-                "ProductBatchNo": "",
-                "ProductBatchQuantity": 0
+        "Product": 
+        [
+        	{
+                "ProductCode": "",
+                "ProductName": "",
+                "ProductBatch": {
+                    "ProductBatchNo": "",
+                    "ProductBatchQuantity": 0
+                }
             }
-        },
+        ],
         "Document": {
             "DocumentURL": "",
             "DocumentType": "",
             "DocumentHash": "",
             "DocumentSign": ""
-        }
+        },
+        "UserSign":{
+			"User":     "",
+			"Verify":   true,
+			"UserSign": ""
+		}
     }
 
 
